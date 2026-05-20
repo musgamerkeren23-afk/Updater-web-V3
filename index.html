@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>💀 H4LL0 HUB UPDATER</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #ff0000;
+      font-family: Arial;
+      text-align: center;
+    }
+
+    h1 {
+      text-shadow: 0 0 10px red;
+    }
+
+    .box {
+      border: 2px solid red;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px red;
+    }
+
+    button {
+      background: black;
+      color: red;
+      border: 1px solid red;
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 90%;
+      height: 100px;
+      background: black;
+      color: red;
+      border: 1px solid red;
+    }
+
+    input {
+      background: black;
+      color: red;
+      border: 1px solid red;
+      padding: 10px;
+    }
+
+    .update {
+      border-bottom: 1px solid red;
+      margin: 10px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>💀 H4LL0 HUB UPDATER</h1>
+
+<div class="box">
+  <h2>Mode</h2>
+  <button onclick="ownerMode()">Owner</button>
+  <button onclick="userMode()">User</button>
+</div>
+
+<div id="ownerPanel" class="box" style="display:none;">
+  <h2>🔐 Owner Panel</h2>
+  <input type="password" id="pass" placeholder="Password"><br><br>
+  <button onclick="login()">Login</button>
+
+  <div id="updateBox" style="display:none;">
+    <h3>Buat Update</h3>
+    <textarea id="updateText"></textarea><br>
+    <button onclick="sendUpdate()">Kirim Update</button>
+  </div>
+</div>
+
+<div class="box">
+  <h2>📢 Updates</h2>
+  <div id="list"></div>
+</div>
+
+<script>
+  // 🔥 CONFIG (PUNYA LU)
+  const SUPABASE_URL = "https://vcyfnfkokgzcrsyydhnz.supabase.co";
+  const SUPABASE_KEY = "PASTE_ANON_KEY_KAMU_DISINI";
+
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // 🔐 PASSWORD OWNER
+  const OWNER_PASS = "h4ll0admin";
+
+  function ownerMode(){
+    document.getElementById("ownerPanel").style.display = "block";
+  }
+
+  function userMode(){
+    document.getElementById("ownerPanel").style.display = "none";
+  }
+
+  function login(){
+    let pass = document.getElementById("pass").value;
+
+    if(pass === OWNER_PASS){
+      document.getElementById("updateBox").style.display = "block";
+      alert("Login berhasil 😈");
+    } else {
+      alert("Password salah!");
+    }
+  }
+
+  // 📤 SEND UPDATE
+  async function sendUpdate(){
+    let text = document.getElementById("updateText").value;
+
+    if(text === "") return alert("Isi dulu!");
+
+    await client.from("updates").insert([
+      {
+        text: text,
+        time: new Date().toLocaleString()
+      }
+    ]);
+
+    document.getElementById("updateText").value = "";
+  }
+
+  // 📥 LOAD DATA
+  async function loadUpdates(){
+    let { data } = await client
+      .from("updates")
+      .select("*")
+      .order("id", { ascending: false });
+
+    document.getElementById("list").innerHTML = "";
+
+    data.forEach(d => {
+      let div = document.createElement("div");
+      div.className = "update";
+      div.innerHTML = `
+        <p>🔥 ${d.text}</p>
+        <small>${d.time}</small>
+      `;
+      document.getElementById("list").appendChild(div);
+    });
+  }
+
+  loadUpdates();
+
+  // 🔄 REALTIME
+  client
+    .channel('updates-channel')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'updates' },
+      payload => {
+        loadUpdates();
+      }
+    )
+    .subscribe();
+
+</script>
+
+</body>
+  </html>
